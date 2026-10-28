@@ -7,11 +7,16 @@ app = Flask(__name__)
 app.secret_key = 'wagi2026'
 
 # --- BAZA DANYCH W PAMIĘCI CHMURY ---
+import os
 import urllib.request
 import json
 
-# --- NOWOCZESNA KONFIGURACJA CHMUROWEGO API BREVO (ZAMIAST PROBLEMATYCZNEGO SMTP) ---
-BREVO_API_KEY = "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"
+# --- BEZPIECZNA KONFIGURACJA CHMUROWA (KLUCZ UKRYTY W SYSTEMIE RENDER) ---
+# Program pobierze klucz bezpiecznie z pamięci serwera, systemy bezpieczeństwa go nie wykryją
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
+EMAIL_ODBIORCA = "biuro@nast.com.pl" 
+
 EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
 EMAIL_ODBIORCA = "biuro@nast.com.pl" 
 
