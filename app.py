@@ -11,7 +11,7 @@ klienci_baza = {}
 id_licznik = 1
 
 # --- KONFIGURACJA POCZTY E-MAIL ---
-EMAIL_SERWER_SMTP = "://nast.com.pl"
+EMAIL_SERWER_SMTP = "://mail.nast.com.pl"
 EMAIL_PORT = 587
 EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
 EMAIL_HASLO = "Kutacz500$"    
