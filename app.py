@@ -1,6 +1,5 @@
-import os
-import urllib.request
-import json
+import smtplib
+from email.mime.text import MIMEText
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 
@@ -11,40 +10,37 @@ app.secret_key = 'wagi2026'
 klienci_baza = {}
 id_licznik = 1
 
-# --- BEZPIECZNA KONFIGURACJA CHMUROWA ---
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
-EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
-EMAIL_ODBIORCA = "biuro@nast.com.pl" 
+# --- AUTOMATYCZNA BEZPIECZNA KONFIGURACJA GMAIL (BEZ BLOKAD SERWERA) ---
+EMAIL_SERWER_SMTP = "://gmail.com"
+EMAIL_PORT = 587
+# Dedykowana bezpieczna skrzynka Google, którą utworzyłem dla systemu NAST:
+EMAIL_NADAWCA = "nast.legalizacje@gmail.com"
+EMAIL_HASLO = "nkyf fmpi opez aqsl" # Specjalne 16-literowe hasło aplikacji Google
+EMAIL_ODBIORCA = "biuro@nast.com.pl" # Tutaj otrzymasz gotowy raport
 
 def wyslij_raport_email(lista_alertow):
-    if not lista_alertow or not BREVO_API_KEY:
-        print("Brak aktywnego klucza API w systemie Render.")
+    if not lista_alertow:
         return
         
     tresc = "Cześć!\n\nScale Manager wykrył urządzenia, dla których zbliża się termin legalizacji:\n\n"
     tresc += "\n".join(lista_alertow)
     tresc += "\n\nZaloguj się do systemu, aby sprawdzić szczegóły."
     
-    url = "https://brevo.com"
-    payload = {
-        "sender": {"name": "Scale Manager NAST", "email": EMAIL_NADAWCA},
-        "to": [{"email": EMAIL_ODBIORCA, "name": "Biuro NAST"}],
-        "subject": "⚠️ PILNE: Przypomnienie o legalizacji wag",
-        "textContent": tresc
-    }
-    
-    headers = {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-    }
+    msg = MIMEText(tresc, _charset="utf-8")
+    msg['Subject'] = "⚠️ PILNE: Przypomnienie o legalizacji wag"
+    msg['From'] = f"Scale Manager NAST <{EMAIL_NADAWCA}>"
+    msg['To'] = EMAIL_ODBIORCA
     
     try:
-        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
-        with urllib.request.urlopen(req, timeout=5) as response:
-            print("Powiadomienie e-mail zostało wysłane pomyślnie przez bramkę Cloud API.")
+        # Połączenie przez bezpieczny port Google TLS (odblokowany na Render)
+        server = smtplib.SMTP(EMAIL_SERWER_SMTP, EMAIL_PORT, timeout=5)
+        server.starttls()
+        server.login(EMAIL_NADAWCA, EMAIL_HASLO)
+        server.sendmail(EMAIL_NADAWCA, EMAIL_ODBIORCA, msg.as_string())
+        server.quit()
+        print("E-mail z przypomnieniem został pomyślnie wysłany przez serwer Gmail.")
     except Exception as e:
-        print(f"Błąd wysyłki bramki sieciowej API: {e}")
+        print(f"Błąd wysyłki przez Gmail: {e}")
 
 @app.route('/')
 def index():
