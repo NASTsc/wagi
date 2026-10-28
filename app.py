@@ -10,9 +10,9 @@ app.secret_key = 'wagi2026'
 klienci_baza = {}
 id_licznik = 1
 
-# --- KONFIGURACJA POCZTY E-MAIL ---
-EMAIL_SERWER_SMTP = "://mail.nast.com.pl"
-EMAIL_PORT = 587
+# --- ZMIENIONA KONFIGURACJA NA BEZPIECZNY PORT 465 ---
+EMAIL_SERWER_SMTP = "mail.nast.com.pl"
+EMAIL_PORT = 465  # Zmiana portu na SSL
 EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
 EMAIL_HASLO = "Kutacz500$"    
 EMAIL_ODBIORCA = "biuro@nast.com.pl" 
@@ -22,7 +22,7 @@ def wyslij_raport_email(lista_alertow):
         return
     tresc = "Cześć!\n\nScale Manager wykrył urządzenia, dla których zbliża się termin legalizacji:\n\n"
     tresc += "\n".join(lista_alertow)
-    tresc += "\n\nZaloguj się do systemu:\nhttps://pythonanywhere.com"
+    tresc += "\n\nZaloguj się do systemu:\nhttps://onrender.com"
     
     msg = MIMEText(tresc, _charset="utf-8")
     msg['Subject'] = "⚠️ PILNE: Przypomnienie o legalizacji wag"
@@ -30,14 +30,15 @@ def wyslij_raport_email(lista_alertow):
     msg['To'] = EMAIL_ODBIORCA
     
     try:
-        server = smtplib.SMTP(EMAIL_SERWER_SMTP, EMAIL_PORT, timeout=5)
-        server.starttls()
+        # Używamy smtplib.SMTP_SSL dla portu 465
+        server = smtplib.SMTP_SSL(EMAIL_SERWER_SMTP, EMAIL_PORT, timeout=5)
         server.login(EMAIL_NADAWCA, EMAIL_HASLO)
         server.sendmail(EMAIL_NADAWCA, EMAIL_ODBIORCA, msg.as_string())
         server.quit()
-        print("E-mail z przypomnieniem został wysłany pomyślnie.")
+        print("E-mail z przypomnieniem został wysłany pomyślnie przez port 465 SSL.")
     except Exception as e:
-        print(f"Błąd SMTP: {e}")
+        print(f"Błąd SMTP na porcie 465: {e}")
+
 
 @app.route('/')
 def index():
