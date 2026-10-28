@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard // SCALE MANAGER</title>
+    <script src="https://tailwindcss.com"></script>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="bg-[#090d16] text-slate-100 flex h-screen overflow-hidden antialiased">
+
+    <!-- PANEL LEWY - FORMULARZ -->
+    <div class="w-85 bg-[#0f172a]/80 border-r border-slate-800/60 p-6 flex flex-col justify-between backdrop-blur-xl">
+        <div>
+            <div class="mb-8 flex items-center space-x-3">
+                <div class="w-3 h-7 bg-gradient-to-b from-sky-400 to-blue-600 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.5)]"></div>
+                <div>
+                    <h2 class="text-xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-sky-400">SCALE MANAGER</h2>
+                    <p class="text-[9px] text-sky-400/60 font-mono tracking-widest uppercase">Intelligent Registry // v5.1</p>
+                </div>
+            </div>
+
+            <form id="fM" method="POST" action="/add" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5 pl-1">Nazwa kontrahenta *</label>
+                    <input type="text" id="f" name="f" required class="w-full bg-[#090d16]/90 border border-slate-800/80 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition duration-200">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5 pl-1">Dane kontaktowe</label>
+                    <input type="text" id="j" name="j" class="w-full bg-[#090d16]/90 border border-slate-800/80 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition duration-200">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5 pl-1">Model wagi</label>
+                    <input type="text" id="m" name="m" class="w-full bg-[#090d16]/90 border border-slate-800/80 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition duration-200">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5 pl-1">Czujniki</label>
+                    <input type="text" id="c" name="c" class="w-full bg-[#090d16]/90 border border-slate-800/80 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition duration-200">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 tracking-wider uppercase mb-1.5 pl-1">Rok oceny zgodności *</label>
+                    <input type="number" id="r" name="r" required class="w-full bg-[#090d16]/90 border border-slate-800/80 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition duration-200">
+                </div>
+
+                <div class="pt-2 space-y-2">
+                    <button type="submit" id="sB" class="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold p-3.5 rounded-xl transition duration-300 shadow-[0_4px_20px_rgba(14,165,233,0.15)]">ZAPISZ URZĄDZENIE</button>
+                    <button type="button" id="aB" class="hidden w-full bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold p-3.5 rounded-xl text-sm transition duration-200" onclick="clForm()">ANULUJ EDYCJĘ</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="border-t border-slate-800/60 pt-4">
+            <a href="/logout" class="block text-center text-xs text-rose-400 hover:text-rose-300 font-bold p-3 border border-rose-500/15 rounded-xl bg-rose-500/5 hover:bg-rose-500/10 transition duration-200">WYLOGUJ OPERATORA</a>
+        </div>
+    </div>
+
+    <!-- PANEL PRAWY - TABELA -->
+    <div class="flex-1 p-8 overflow-y-auto flex flex-col space-y-6">
+        <div class="flex justify-between items-center border-b border-slate-800/50 pb-5">
+            <div>
+                <h2 class="text-2xl font-extrabold tracking-tight text-white">REJESTR AKTYWNYCH LEGALIZACJI</h2>
+                <p class="text-xs text-slate-400 mt-1">Ewidencja urządzeń oraz automatyczna ochrona terminów metrologicznych.</p>
+            </div>
+            <div class="flex items-center space-x-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full">
+                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                <span class="text-[11px] font-bold text-emerald-400 tracking-wide uppercase font-mono">Baza zsynchronizowana</span>
+            </div>
+        </div>
+
+        {% if alerty %}
+        <div class="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl shadow-lg">
+            <h3 class="text-rose-400 font-bold mb-2 text-sm tracking-wide font-mono">⚠️ INTELLIGENT ALERT SYSTEM // WYKRYTO TERMINY</h3>
+            <ul class="text-xs text-rose-300/90 space-y-1.5 list-disc pl-5 font-medium">
+                {% for alert in alerty %}
+                <li>{{ alert }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="glass-panel rounded-2xl border border-slate-800/60 shadow-2xl overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-[#0b1324]/90 text-sky-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800/80">
+                        <th class="p-4.5 text-center w-16 pl-6">ID</th>
+                        <th class="p-4.5">Nazwa Firmy / Kontrahent</th>
+                        <th class="p-4.5">Dane Kontaktowe</th>
+                        <th class="p-4.5">Model Wagi</th>
+                        <th class="p-4.5">Podzespół (Czujniki)</th>
+                        <th class="p-4.5 text-center">Rok Oceny</th>
+                        <th class="p-4.5 text-center">Ważność Do</th>
+                        <th class="p-4.5 text-center pr-6">Akcje systemowe</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-slate-800/40 bg-[#111c30]/10">
+                    {% for r in data %}
+                    <tr class="hover:bg-slate-800/30 transition duration-150 group">
+                        <td class="p-4.5 text-center text-slate-500 mono font-medium pl-6">{{ r.id }}</td>
+                        <td class="p-4.5 font-bold text-white group-hover:text-sky-300 transition duration-150">{{ r.firma }}</td>
+                        <td class="p-4.5 text-slate-400 font-medium">{{ r.kontakt if r.kontakt else '-' }}</td>
+                        <td class="p-4.5"><span class="bg-slate-800/60 text-slate-300 border border-slate-700/40 px-2.5 py-1 rounded-lg text-xs font-medium">{{ r.model if r.model else '-' }}</span></td>
+                        <td class="p-4.5 text-slate-300"><span class="text-sky-400/80 font-mono text-xs">◆</span> {{ r.czujniki if r.czujniki else '-' }}</td>
+                        <td class="p-4.5 text-center mono text-slate-400">{{ r.rok }}</td>
+                        <td class="p-4.5 text-center">
+                            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl mono font-bold text-xs shadow-sm">
+                                {{ r.koniec }}
+                            </span>
+                        </td>
+                        <td class="p-4.5 text-center pr-6">
+                            <div class="flex items-center justify-center space-x-3">
+                                <button type="button" class="bg-sky-500/5 hover:bg-sky-500/20 text-sky-400 border border-sky-500/10 hover:border-sky-500/30 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition duration-150"
+                                        onclick="ldForm('{{ r.id }}','{{ r.firma }}','{{ r.kontakt if r.kontakt else '' }}','{{ r.model if r.model else '' }}','{{ r.czujniki if r.czujniki else '' }}','{{ r.rok }}')">
+                                    EDYCJA
+                                </button>
+                                <a href="/del/{{ r.id }}"
+                                   class="bg-rose-500/5 hover:bg-rose-500/20 text-rose-400 border border-rose-500/10 hover:border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition duration-150"
+                                   onclick="return confirm('Czy na pewno usunąć wpis dla firmy {{ r.firma }}?')">
+                                    USUŃ
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function ldForm(id, f, j, m, c, r) {
+            document.getElementById('fM').action = '/edit/' + id;
+            document.getElementById('f').value = f;
+            document.getElementById('j').value = j;
+            document.getElementById('m').value = m;
+            document.getElementById('c').value = c;
+            document.getElementById('r').value = r;
+const submitBtn = document.getElementById('sB');
+submitBtn.textContent = 'ZAKTUALIZUJ REJESTR';
+submitBtn.className = 'w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold p-3.5 rounded-xl transition duration-300 shadow-[0_4px_20px_rgba(16,185,129,0.15)]';
+document.getElementById('aB').classList.remove('hidden');
+}
+function clForm() {
+document.getElementById('fM').action = '/add';
+document.getElementById('fM').reset();
+const submitBtn = document.getElementById('sB');
+submitBtn.textContent = 'ZAPISZ URZĄDZENIE';
+submitBtn.className = 'w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-slate-950 font-bold p-3.5 rounded-xl transition duration-300 shadow-[0_4px_20px_rgba(14,165,233,0.15)]';
+document.getElementById('aB').classList.add('hidden');
+}
+
+    </script>
+</body>
+</html>
