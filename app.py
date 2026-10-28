@@ -1,5 +1,6 @@
-import smtplib
-from email.mime.text import MIMEText
+import os
+import urllib.request
+import json
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import datetime
 
@@ -7,28 +8,23 @@ app = Flask(__name__)
 app.secret_key = 'wagi2026'
 
 # --- BAZA DANYCH W PAMIĘCI CHMURY ---
-import os
-import urllib.request
-import json
+klienci_baza = {}
+id_licznik = 1
 
-# --- BEZPIECZNA KONFIGURACJA CHMUROWA (KLUCZ UKRYTY W SYSTEMIE RENDER) ---
-# Program pobierze klucz bezpiecznie z pamięci serwera, systemy bezpieczeństwa go nie wykryją
+# --- BEZPIECZNA KONFIGURACJA CHMUROWA ---
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
 EMAIL_ODBIORCA = "biuro@nast.com.pl" 
 
-EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
-EMAIL_ODBIORCA = "biuro@nast.com.pl" 
-
 def wyslij_raport_email(lista_alertow):
-    if not lista_alertow:
+    if not lista_alertow or not BREVO_API_KEY:
+        print("Brak aktywnego klucza API w systemie Render.")
         return
         
     tresc = "Cześć!\n\nScale Manager wykrył urządzenia, dla których zbliża się termin legalizacji:\n\n"
     tresc += "\n".join(lista_alertow)
-    tresc += "\n\nZaloguj się do systemu:\nhttps://onrender.com"
+    tresc += "\n\nZaloguj się do systemu, aby sprawdzić szczegóły."
     
-    # Przygotowanie bezpiecznego zapytania HTTP do chmury pocztowej
     url = "https://brevo.com"
     payload = {
         "sender": {"name": "Scale Manager NAST", "email": EMAIL_NADAWCA},
@@ -46,17 +42,17 @@ def wyslij_raport_email(lista_alertow):
     try:
         req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
         with urllib.request.urlopen(req, timeout=5) as response:
-            res_body = response.read()
             print("Powiadomienie e-mail zostało wysłane pomyślnie przez bramkę Cloud API.")
     except Exception as e:
         print(f"Błąd wysyłki bramki sieciowej API: {e}")
 
+@app.route('/')
+def index():
+    if not session.get('zalogowany'): 
         return redirect(url_for('login'))
     
     data_list = list(klienci_baza.values())
     
-    # PEWNY I PROSTY MECHANIZM ALERTÓW NA ROK 2026
-    # Skoro mamy rok 2026, to wszystkie wagi z oceną zgodności z roku 2024 (lub starsze) WYMAGAJĄ legalizacji!
     do_p = []
     for r in data_list:
         if int(r['rok']) <= 2024:
