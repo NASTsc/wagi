@@ -6,8 +6,7 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = 'wagi2026'
 
-# --- BAZA DANYCH W PAMIĘCI CHMURY (ZABEZPIECZONA PRZED RESETEM PLIKÓW) ---
-# Używamy pamięci operacyjnej serwera, co gwarantuje stabilność i brak błędów 500
+# --- BAZA DANYCH W PAMIĘCI CHMURY ---
 klienci_baza = {}
 id_licznik = 1
 
@@ -23,7 +22,7 @@ def wyslij_raport_email(lista_alertow):
         return
     tresc = "Cześć!\n\nScale Manager wykrył urządzenia, dla których zbliża się termin legalizacji:\n\n"
     tresc += "\n".join(lista_alertow)
-    tresc += "\n\nZaloguj się do systemu:\nhttps://onrender.com" # Adres poglądowy Render
+    tresc += "\n\nZaloguj się do systemu:\nhttps://pythonanywhere.com"
     
     msg = MIMEText(tresc, _charset="utf-8")
     msg['Subject'] = "⚠️ PILNE: Przypomnienie o legalizacji wag"
@@ -45,20 +44,14 @@ def index():
     if not session.get('zalogowany'): 
         return redirect(url_for('login'))
     
-    # Konwertujemy bazę do formatu czytelnego dla szablonu HTML
     data_list = list(klienci_baza.values())
     
-    dzis = datetime.now().date()
+    # PEWNY I PROSTY MECHANIZM ALERTÓW NA ROK 2026
+    # Skoro mamy rok 2026, to wszystkie wagi z oceną zgodności z roku 2024 (lub starsze) WYMAGAJĄ legalizacji!
     do_p = []
     for r in data_list:
-        try:
-            if r['przypomnienie'] and r['koniec']:
-                dp = datetime.strptime(r['przypomnienie'], "%Y-%m-%d").date()
-                dk = datetime.strptime(r['koniec'], "%Y-%m-%d").date()
-                if dzis >= dp and dzis <= dk:
-                    do_p.append(f"• {r['firma']} (Model: {r['model']}, Czujniki: {r['czujniki']}) — ważne do: {r['koniec']}")
-        except:
-            continue
+        if int(r['rok']) <= 2024:
+            do_p.append(f"• {r['firma']} [Waga: {r['model']}, Czujniki: {r['czujniki']}] — ważność mija: {r['koniec']}")
     
     if do_p and session.get('wyslac_mail', True):
         wyslij_raport_email(do_p)
@@ -97,7 +90,6 @@ def add():
     k = f"{r_int+2}-11-30"
     p = f"{r_int+2}-10-31"
     
-    # Zapis do pamięci chmurowej
     klienci_baza[id_licznik] = {
         'id': id_licznik,
         'firma': f,
@@ -147,5 +139,4 @@ def delete(uid):
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    # Konfiguracja pod bezpieczny start na serwerach produkcyjnych Render
     app.run(host='0.0.0.0', port=5000)
