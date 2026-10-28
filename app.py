@@ -7,42 +7,45 @@ app = Flask(__name__)
 app.secret_key = 'wagi2026'
 
 # --- BAZA DANYCH W PAMIĘCI CHMURY ---
-klienci_baza = {}
-id_licznik = 1
+import urllib.request
+import json
 
-# --- ZMIENIONA KONFIGURACJA NA BEZPIECZNY PORT 465 ---
-EMAIL_SERWER_SMTP = "mail.nast.com.pl"
-EMAIL_PORT = 465  # Zmiana portu na SSL
+# --- NOWOCZESNA KONFIGURACJA CHMUROWEGO API BREVO (ZAMIAST PROBLEMATYCZNEGO SMTP) ---
+BREVO_API_KEY = "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"
 EMAIL_NADAWCA = "legalizacje@nast.com.pl"  
-EMAIL_HASLO = "Kutacz500$"    
 EMAIL_ODBIORCA = "biuro@nast.com.pl" 
 
 def wyslij_raport_email(lista_alertow):
     if not lista_alertow:
         return
+        
     tresc = "Cześć!\n\nScale Manager wykrył urządzenia, dla których zbliża się termin legalizacji:\n\n"
     tresc += "\n".join(lista_alertow)
     tresc += "\n\nZaloguj się do systemu:\nhttps://onrender.com"
     
-    msg = MIMEText(tresc, _charset="utf-8")
-    msg['Subject'] = "⚠️ PILNE: Przypomnienie o legalizacji wag"
-    msg['From'] = EMAIL_NADAWCA
-    msg['To'] = EMAIL_ODBIORCA
+    # Przygotowanie bezpiecznego zapytania HTTP do chmury pocztowej
+    url = "https://brevo.com"
+    payload = {
+        "sender": {"name": "Scale Manager NAST", "email": EMAIL_NADAWCA},
+        "to": [{"email": EMAIL_ODBIORCA, "name": "Biuro NAST"}],
+        "subject": "⚠️ PILNE: Przypomnienie o legalizacji wag",
+        "textContent": tresc
+    }
+    
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
     
     try:
-        # Używamy smtplib.SMTP_SSL dla portu 465
-        server = smtplib.SMTP_SSL(EMAIL_SERWER_SMTP, EMAIL_PORT, timeout=5)
-        server.login(EMAIL_NADAWCA, EMAIL_HASLO)
-        server.sendmail(EMAIL_NADAWCA, EMAIL_ODBIORCA, msg.as_string())
-        server.quit()
-        print("E-mail z przypomnieniem został wysłany pomyślnie przez port 465 SSL.")
+        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+        with urllib.request.urlopen(req, timeout=5) as response:
+            res_body = response.read()
+            print("Powiadomienie e-mail zostało wysłane pomyślnie przez bramkę Cloud API.")
     except Exception as e:
-        print(f"Błąd SMTP na porcie 465: {e}")
+        print(f"Błąd wysyłki bramki sieciowej API: {e}")
 
-
-@app.route('/')
-def index():
-    if not session.get('zalogowany'): 
         return redirect(url_for('login'))
     
     data_list = list(klienci_baza.values())
